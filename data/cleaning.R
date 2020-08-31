@@ -1,9 +1,7 @@
 library(tidyverse)
 library(magrittr)
 
-house <- read_csv("data/scraping/housing.csv")
-
-house <- house %>% 
+house <- read_csv("data/scraping/housing.csv") %>% 
   select(-X1) 
 
 house %<>% 
@@ -25,10 +23,8 @@ house %<>%
          KM = str_extract(KM, "\\d+"),
          m2 = str_extract(m2, "\\d+"))
 
-house <- house %>% 
-  mutate_at(c("price","KT","KM","m2"), as.numeric)
-
-house <- house %>% 
+house %<>% 
+  mutate_at(c("price","KT","KM","m2"), as.numeric) %>% 
   rename(harga = price)
 
 write_csv(house, "data/housing_jkt.csv")
