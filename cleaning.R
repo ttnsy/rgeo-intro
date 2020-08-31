@@ -1,7 +1,7 @@
 library(tidyverse)
 library(magrittr)
 
-house <- read_csv("data/housing.csv")
+house <- read_csv("data/scraping/housing.csv")
 
 house <- house %>% 
   select(-X1) 
