@@ -141,7 +141,7 @@ kecamatan <- housing %>%
 ```
 
 ```{r}
-# Needs to do fortify / transforming geospatial object into beloved data frame
+# Needs to do fortify / transforming geospatial object into beloved data frame (vector to raster?)
 indo_f <- fortify(idn_sub)
 idn_sub$id <- row.names(idn_sub) 
 indo_f <- left_join(indo_f, idn_sub@data) %>% 
