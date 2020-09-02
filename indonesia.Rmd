@@ -1,0 +1,118 @@
+---
+title: 'Building Interactive Map for Geospatial Analysis in R'
+author: "Team Algoritma"
+date: "`r format(Sys.Date(), '%B %e, %Y')`"
+output:
+  html_document:
+    theme: cosmo
+    highlight: tango
+    toc: true
+    toc_float:
+      collapsed: false
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+# clear-up the environment
+rm(list = ls())
+# chunk options
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  comment = "#>"
+)
+library(dplyr)
+library(rgdal)
+library(tmap)
+library(sf)
+library(ggplot2)
+```
+
+# Building Indonesia's Static Map
+
+*Geospatial analysis* as the main topic of our course, is a domain of analysis that focuses on data processing that is associated with geographic data. It introduces a formal techniques using geographic and geometry properties of a data. There are various business problems that can be solved using geospatial analysis, namely a few:  
+- Warehouse logistics optimization  
+- Market growth analysis for different regions  
+- Sales demand forecasting  
+- Work resource management  
+
+There are also unlisted potentials for other business domain analysis. This study focusesin extracting useful information of a geographic information into business insights. In this section we will try to learn the building blocks of a geospatial data in R by dive deeper into creating Indonesia's static map.
+
+## Retrieving Indonesia's Spatial Vector
+
+One of the most popular data types in working with geospatial is called **spatial vector**. The one we'll be looking into is the universal standard of geospatial format developed and regulated by [Esri](https://www.esri.com/en-us/home) called **Shapefile**. Esri is known to be the international supplier of geographic information system softwares. The type format, however is then adopted by so many programming languages, including R.
+
+Shapefile formats mainly includes 3 main files:  
+- `.shp` includes the geometry data    
+- `.shx` includes the index data used to identify different geometries    
+- `.dbf` includes attribute information of each geometry's data  
+
+Indonesia's spatial vector we'll be working with is made available by [GADM](https://gadm.org/about.html). If you went ahead to its website you can pick out different countries spatial vector. Indonesia's spatial vector is provided up to 4 levels of granularity. In this course we'll be working with 3 levels of spatial vector that contains:  
+- Provinsi  
+- Kabupaten  
+- Kecamatan  
+
+The data has already been stored under `data` folder, we'll read the data in using `readOGR()` function from `rgdal` package. The function will read any shapefile by providing the layer name of the file:
+
+```{r}
+idn3 <- readOGR(dsn = "data", layer = "gadm36_IDN_3")
+```
+
+Notice in the data we are reading there are additional files other than 3 mandatory files listed above:  
+- `.prj` includes the information of the coordinate reference system    
+- `.cpg` includes encoding information for the variable attribute stored in `.dbf` files
+
+### Working with Spatial Vector in R
+
+If you use the `class()` function for our newly created `idn3` object you can retrieved the SpatialPolygonsDataFrame class that is the formal spatial vector class in R:
+
+```{r}
+class(idn3)
+```
+
+To get a better idea the information stored in the object let's go ahead and plot the object using `plot()` function:
+
+```{r}
+plot(idn3)
+```
+
+We can see that `plot()` function is stored a spatial polygon information of Indonesia, seperated by Kecamatan. The object, is stored a a rectangular images starting on the bottom left to the top right. In geographic domain, it is common to refer the coordination system using **Latitude** and **Longitude** unit. 
+Let's use the `summary()` function to retrieve other informations from our object: 
+
+```{r}
+summary(idn3)
+```
+
+The information listed is representing rectangular geographic information in Indonesia as we can see in the plot above. In the summary above, we could see the `x` coordinate, or commonly referred as latitude to start at 95 span to 141 and `y` coordinate, or longitude, span from -11 to 6.
+
+Recall how we also read Coordinate Reference System (CRS) information through `.prj` file. You can singularly retrieve the information by accesing the `proj4string` slot:
+
+```{r}
+idn3@proj4string
+```
+
+A CRS is a fundamental component of geospatial data. It models earth surface into a mathematical model. Intuitively you could think of it as a way to model a 3 dimensional surfaces such as earth, into a 2 dimensional surface that is commonly used in geospatial analysis: making maps, distance calculation, etc. Take a look at the following images for better illustration:  
+
+![Source: https://datacarpentry.org/](assets/crs.jpg)
+
+If we were using geospatial data from different sources, it is important to make sure the data we are using has the same CRS attribute. A different CRS would not represented in a same mathematical space if combined and would alter any calculation done on the data significantly.
+
+In `proj4string` format, you could see 2 main attributes printed:  
+- `proj` the projection of earth angular measurement, we'll be using a longitude and latitude    
+- `datum` the model shape of earth and define the angular measurement starting points. Common ones are `WGS84` and also the one we are using on this workshop  
+
+### Joining Tables to Spatial Polygon
+
+Recall how we access the `proj4string` slot from our object. A spatial polygon data frame we have created earlier has different *slots* we can access. In this workshop we will talk a lot about the `@data` slot. This stores the tabular information associated for different region. Let's access the first 5 rows of our table:
+
+```{r}
+head(idn3@data)
+```
+
+It contains several column information of different levels of regions. The third level, as we can see stated in the `TYPE_3` column, stored Kecamatan information from Indonesia. Now let's head back to our `housing_jkt` data that stores different house prices in Jadebotabek area.
+
+```{r}
+housing <- read.csv("data/housing_jkt.csv")
+housing %>% glimpse()
+```
