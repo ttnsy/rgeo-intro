@@ -102,7 +102,7 @@ In `proj4string` format, you could see 2 main attributes printed:
 - `proj` the projection of earth angular measurement, we'll be using a longitude and latitude    
 - `datum` the model shape of earth and define the angular measurement starting points. Common ones are `WGS84` and also the one we are using on this workshop  
 
-### Joining Tables to Spatial Polygon
+### Data Wrangling with Geospatial Data Frame
 
 Recall how we access the `proj4string` slot from our object. A spatial polygon data frame we have created earlier has different *slots* we can access. In this workshop we will talk a lot about the `@data` slot. This stores the tabular information associated for different region. Let's access the first 5 rows of our table:
 
@@ -116,3 +116,43 @@ It contains several column information of different levels of regions. The third
 housing <- read.csv("data/housing_jkt.csv")
 housing %>% glimpse()
 ```
+
+```{r}
+idn3@data %>% 
+  glimpse
+```
+
+
+```{r}
+# Subsetting for geospatial data frame (subsets for polygon and data slots)
+idn_sub <- idn3[idn3@data$NAME_2 %in% unique(housing$kota),]
+```
+
+```{r}
+plot(idn_sub, col="lightgrey")
+```
+
+```{r}
+kecamatan <- housing %>% 
+  group_by(kecamatan) %>% 
+  summarise(
+    harga = mean(harga)
+  )
+```
+
+```{r}
+# Needs to do fortify / transforming geospatial object into beloved data frame
+indo_f <- fortify(idn_sub)
+idn_sub$id <- row.names(idn_sub) 
+indo_f <- left_join(indo_f, idn_sub@data) %>% 
+  left_join(kecamatan, by=c("NAME_3" = "kecamatan"))
+
+
+ggplot(indo_f, aes(long,lat, group = group, fill=harga)) +
+  geom_polygon() + coord_equal() +
+  labs(fill = "Average House Price") +
+  ggtitle("Jakarta Average Housing Price") +
+  scale_fill_gradient(low = "goldenrod1", high = "tomato3", na.value = "lightgrey") +
+  theme_minimal()
+```
+
