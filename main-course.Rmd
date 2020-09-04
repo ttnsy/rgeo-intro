@@ -182,7 +182,7 @@ You can also access GADM database directly from R with the help of [`GADMTools`]
 Let's read in the files using `st_read()` function from `sf` package:
 
 ```{r}
-idn3 <- st_read(dsn = "data/gadm36_IDN_3", layer = "gadm36_IDN_3")
+idn3 <- st_read(dsn = "gadm36_IDN_3", layer = "gadm36_IDN_3")
 ```
 
 `sf` represents "Simple Features" as records in a data.frame or tibble with a geometry list-column[^3]. **Simple Features** is a hierarchical data model that represents a wide range of geometry types. Of 17 geometry types supported by the specification, only 7 are used in the vast majority of geographic research [^4]:
@@ -378,6 +378,8 @@ ggplotly(plot, tooltip = "text") %>% # define tooltip
 ### Interactive Mapping with `leaflet`
 
 Among all available mapping packages in R, `leaflet` has became the most widely used for building interactive maps in R. It provides a relatively low-level interface to the Leaflet JavaScript library. The full documentation of the package can be accessed [here](https://rstudio.github.io/leaflet/). 
+
+From its documentation
 
 
 ```{r}
