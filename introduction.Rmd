@@ -338,13 +338,13 @@ invoice
 
 # Exploratory Data Analysis
 
-In the previous section we have learned the data structure in R. Now let’s import some data to work with using `read.csv()` function. The data we'll be working is `housing_jkt.csv`, a data consists of properties listed for sale in Jabodetabek area, scraped from a housing marketplace.
+In the previous section we have learned the data structure in R. Now let’s import some data to work with using `read.csv()` function. The data we'll be working is `listings.csv`, a data consists of properties listed for sale in Jabodetabek area, scraped from a housing marketplace.
 
 ```{r}
-housing <- read.csv("data/housing_jkt.csv")
+housing <- read.csv("data/listings.csv")
 ```
 
-The `read.csv()` function has one mandatory parameter to be passed in: the path relative to your markdown file. In this case, if you take a look at the project directory you will see `data` folder and inside there is `housing_jkt.csv` file. By passing the file’s path as a parameter, R will know where to look for the data then begin to import and store it into `housing` object. 
+The `read.csv()` function has one mandatory parameter to be passed in: the path relative to your markdown file. In this case, if you take a look at the project directory you will see `data` folder and inside there is `listings.csv` file. By passing the file’s path as a parameter, R will know where to look for the data then begin to import and store it into `housing` object. 
 
 Now, let’s validate what we have learned so far: if we import a tabular data in R, it will be stored as a data frame. If we take the `housing` object and check its class, we’ll get the following output: 
 

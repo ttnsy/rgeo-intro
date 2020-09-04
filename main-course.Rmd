@@ -6,7 +6,7 @@ date: "9/2/2020"
 output: 
   bookdown::html_document2:
     toc: true
-    toc_depth: 2
+    toc_depth: 3
     toc_float: 
       collapsed: false
     number_sections: true
@@ -23,6 +23,7 @@ knitr::opts_chunk$set(
   message = FALSE,
   warning = FALSE,
   fig.align = "center",
+  class.output = ".scroll-500",
   comment = "#>"
 )
 options(scipen = 9999)
@@ -96,9 +97,9 @@ You will need to use `install.packages()` to install any packages that are not y
 
 ```{r eval=FALSE}
 ## DO NOT RUN CHUNK
-packages <- c("tidyverse", "maps","rgdal","tmap","sf")
-
-install.packages(packages)
+# packages <- c("tidyverse", "maps","rgdal","tmap","sf")
+# 
+# install.packages(packages)
 ```
 
 Then you need to load the package into your workspace using the `library()` function. Special for this course, the _rmarkdown_ packages do not need to be called using `library()`.
@@ -107,12 +108,14 @@ Then you need to load the package into your workspace using the `library()` func
 # package for data wrangling & vis
 library(tidyverse)
 library(glue)
-
-# package for visualization
 library(scales)
 
-# package for spatial analysis in R
+# package for spatial environment in R
 library(sf)
+
+# package for visualization
+library(leaflet)
+library(plotly)
 
 ```
 
@@ -154,13 +157,7 @@ For this workshop, I have provided a shapefile for Indonesian territory under `d
 - `.cpg` includes encoding information for the variable attribute stored in `.dbf` files
 
 
-The shapefile itself is made available by [GADM](https://gadm.org/about.html). If you go ahead to the website you can pick out different countries spatial vector. Indonesia's spatial vector is provided up to 4 levels of granularity. In this course we'll be working with 3 levels of spatial vector that contains:  
-
-- Provinsi  
-- Kabupaten  
-- Kecamatan  
-
-
+The shapefile itself is made available by [GADM](https://gadm.org/about.html). If you go ahead to the website you can pick out different countries spatial vector. Indonesia's spatial vector is provided up to 4 levels of granularity. In this course we'll be working with 3 levels of spatial vector that contains: **Provinsi**, **Kabupaten** and **Kecamatan**.
 
 ***
 **Extra Tip**:  
@@ -197,7 +194,7 @@ If you use the `class()` function for our newly created `idn3` object you can re
 class(idn3)
 ```
 
-The main difference between a regular dataframe an an `sf` object is that it has `geometry` which describes where on Earth the feature is located, and they have attributes, which describe other properties[^3]:
+The main difference between a regular dataframe an an `sf` object is that it has `geometry` which describes where on Earth the feature is located, and they have attributes, which describe other properties:
 
 ```{r}
 idn3$geometry
@@ -224,7 +221,36 @@ knitr::include_graphics("img/crs.jpg")
 
 If we were using geospatial data from different sources, it is important to make sure the data we are using has the same CRS attribute. A different CRS would not represented in the same mathematical space if combined and would alter any calculation done on the data significantly.
 
-### Extra notes on Simple Features
+## Working with Vector Attributes
+
+The big advantage of using `sf` is how you each functions can be combined using `%>%` operator and works well with the tidyverse collection of R packages, which gives us better control over the geometry information in `sf` objects. For example, to subset certain provinces, you can use `filter()` method just like how you work with regular dataframe:
+
+```{r}
+bali <- idn3 %>% 
+  filter(NAME_1 == "Bali")
+
+plot(bali$geometry)
+```
+
+You can also perform aggregation operations over the geometry:
+
+```{r}
+bali_prov <- bali %>% 
+  group_by(NAME_1) %>% 
+  summarise()
+
+plot(bali_prov$geometry)
+```
+
+> **Dive Deeper**
+
+Using the same method as above, try to plot a map which shown Indonesian province of North Sumatra in the city (Kabupaten/Kota) level!
+
+```{r}
+## Your code here 
+
+```
+
 
 Other than `sf`'s simple features, there are actually other methodologies for storing model of geographical features into R. If you ever ran into a geospatial studies in R, you may also familiar with the use of `sp` package. In fact, `sp` was a very-well developed package since 2005 which practically supported almost every GIS analysis in R, even until now.
 
@@ -258,10 +284,10 @@ If you want to learn more about `sp` and how to work with spatial data using `sp
 
 ## Data Preprocessing
 
-Now let's head back to our `housing_jkt`, a data consists of properties listed for sale in Jabodetabek area:
+Now let's head back to our `listings.csv`, a data consists of properties listed for sale in Jabodetabek area:
 
 ```{r}
-df <- read.csv("data/housing_jkt.csv")
+df <- read.csv("data/listings.csv")
 head(df)
 ```
 Here, we want to compare the house pricing for each sub-district (`Kecamatan`) level. Since the size of the listed properties may vary, we'll use the price per square meter instead:
@@ -320,6 +346,17 @@ You can also easily map the color of `harga_m2` by adding the variable inside th
 ggplot(df_agg)+
   geom_sf(aes(fill = harga_m2)) 
 ```
+> **Dive Deeper**
+
+Recall how you can use `labs()` in ggplot to add label informations, such as title, subtitle, etc. Copy down the previous code above, and provide the map with appropriate labellings on the chunk below!
+
+```{r}
+## Your Code Here
+
+```
+
+
+
 With small adjustments and feature additions, we have built a nice geographic representation of house pricing in Jakarta. Notice that in the chunk below, I added a layer of `theme_algo_map()`, which was a customized map I created for this workshop. (You can also create your own theme too!)
 
 The modularity of `ggplot2` also allows us to save it as an external file, makes it easy for us to make a reproducible custom theming. You can find the code for `theme_algo_map()` under `assets/theme_algo.R`.
@@ -346,8 +383,6 @@ Since we have stored our most recent plot creation as an object named `plot`, le
 (*P.S. If you haven't install the plotly package, you can run `install.packages("plotly")` through your console*)
 
 ```{r}
-library(plotly)
-
 ggplotly(plot)
 ```
 
@@ -375,113 +410,318 @@ ggplotly(plot, tooltip = "text") %>% # define tooltip
   config(displayModeBar = F) # hide the modebar
 ```
 
+
+> **Dive Deeper**
+
+Using the same method as above, try to create a map that represent the number of listed properties(`total_listings`) in each sub-district. Once you're done, you can also try to customize your own map appearance!
+
+```{r}
+## Your code here
+
+```
+
+
 ### Interactive Mapping with `leaflet`
 
 Among all available mapping packages in R, `leaflet` has became the most widely used for building interactive maps in R. It provides a relatively low-level interface to the Leaflet JavaScript library. The full documentation of the package can be accessed [here](https://rstudio.github.io/leaflet/). 
 
-From its documentation
+Taken from its official documentation[^5], to create a Leaflet map we can follow these basic steps:
 
+1. Create a map widget by calling `leaflet()`.
+2. Add layers (i.e., features) to the map by using layer functions (e.g. `addTiles`, `addMarkers`, `addPolygons`) to modify the map widget.
+3. Repeat step 2 as desired.
+4. Print the map widget to display it.
 
-```{r}
-library(leaflet)
-```
+Now, let's follow the steps above to recreate the previous choropleth as a Leaflet map.
 
 ```{r}
 # leaflet
-
-m <- leaflet(df_agg) %>% 
-  addTiles() %>% 
-  addPolygons()
-
-m
+leaflet(df_agg) %>% # create map widget
+  addTiles() %>% # add basemap
+  addPolygons() # add polygons from `sf` data %
 ```
 
+By default, `addTiles()` used tiles from [OpenStreetMap](https://www.openstreetmap.org/). We can also use third-party basemaps by using `addProviderTiles()` instead. The lists of complete set basemaps provided by `leaflet-providers` can be found [here](http://leaflet-extras.github.io/leaflet-providers/preview/index.html).
+
+```{r}
+# list of available provider tiles
+names(providers)
+```
+
+
+To access the supported tile providers, we can also use`providers$` and choose from the options:
+
+```{r}
+leaflet(df_agg) %>% 
+  addProviderTiles(providers$Esri.NatGeoWorldMap) %>%  
+  addPolygons()
+```
+
+Let's now color the polygons based on the house pricing. First, we need to create a color palette to represent the data. In the chunk below, we create an object called `pal` which stores the colors generated from `df_agg$harga_m2` values. The value passed to fill in `palette` is provided by [ColorBrewer2](https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3) palettes.
+
+Notice that on the next line, inside the `addPolygons()` function call, we also add some parameters:
+
+- `fillColor`: the values and palette to be mapped
+- `fillOpacity`: the `fillColor` opacity
+- `weight`: thickness of the mapped polygons
+- `color`: color of the mapped polygons
+
+```{r}
+pal <- colorNumeric(palette = "Reds", domain = df_agg$harga_m2)
+
+leaflet(df_agg) %>% 
+  addProviderTiles(providers$Esri.NatGeoWorldMap) %>%  
+  addPolygons(
+    fillColor = ~pal(harga_m2),
+    fillOpacity = .8,
+    weight = 2,
+    color = "white"
+  )
+
+```
+
+To add more interaction to our map, we can also make the polygons highlight as the mouse passes over them. We can do it by defining the `highlight` argument inside the `addPolygons()` function:
+
+```{r}
+leaflet(df_agg) %>% 
+  addProviderTiles(providers$Esri.NatGeoWorldMap) %>%  
+  addPolygons(
+    fillColor = ~pal(harga_m2),
+    fillOpacity = .8,
+    weight = 2,
+    color = "white",
+    highlight = highlightOptions(
+      weight = 5,
+      color = "black",
+      bringToFront = TRUE,
+      opacity = 0.8
+    )
+  )
+```
+
+
+Now let’s also add labels information as we hover over each sub-district mapped. To add the label, we need to create a HTML object using `htmltools::HTML` which stores the value of information we desired to be shown:
 
 ```{r}
 labels <- glue::glue("
   <b>{df_agg$kecamatan}, {df_agg$kota}</b>:<br> {round(df_agg$harga_m2/1e6, 2)} jt/m2"
 ) %>% lapply(htmltools::HTML)
+```
 
-pal <- colorBin("YlOrRd", domain = df_agg$harga_m2)
+Then, to map it, we can add `label` argument inside the `addPolygons()` function.
 
-df_agg %>%
-st_as_sf() %>%
+```{r}
+leaflet(df_agg) %>% 
+  addProviderTiles(providers$Esri.NatGeoWorldMap) %>%  
+  addPolygons(
+    label = labels,
+    fillColor = ~pal(harga_m2),
+    fillOpacity = .8,
+    weight = 2,
+    color = "white",
+    highlight = highlightOptions(
+      weight = 5,
+      color = "black",
+      bringToFront = TRUE,
+      opacity = 0.8
+    )
+  )
+```
 
-leaflet() %>%
-addTiles() %>% 
-addPolygons(
-  label = labels,
-  fillColor = ~pal(harga_m2),
-  weight = 2,
-  opacity = 1,
-  color = "darkred",
-  dashArray = "3",
-  fillOpacity = 0.6,
-  highlight = highlightOptions(
-    weight = 5,
-    color = "black",
-    fillOpacity = 0.7,
-    bringToFront = TRUE)) %>% 
-  addLegend(pal = pal,
-            values = ~n,
-            opacity = 0.7,
-            title = NULL, 
-            position = "bottomright")
+As the final step, we might also need to add a legend to give information about the colors and intervals. To add the legend, we only a layer of `addLegend()` function:
+
+```{r}
+leaflet(df_agg) %>% 
+  addProviderTiles(providers$Esri.NatGeoWorldMap) %>%  
+  addPolygons(
+    label = labels,
+    fillColor = ~pal(harga_m2),
+    fillOpacity = .8,
+    weight = 2,
+    color = "white",
+    highlight = highlightOptions(
+      weight = 5,
+      color = "black",
+      bringToFront = TRUE,
+      opacity = 0.8
+    )
+  ) %>% 
+  addLegend(
+    pal = pal,
+    values = ~harga_m2,
+    opacity = 1,
+    title = "Harga/m2",
+    position = "bottomright"
+  )
 ```
 
 
+> **Dive Deeper**
 
+1. Suppose we want to create a border to separate areas under the Jakarta Area. Recall how you can perform aggregation over the vector attributes and fill down the code skeleton (`______`) below to get the geometry for our Jakarta border!
+```r
+# Copy down this code to the chunk below:
+
+border  <- df_agg %>% 
+  filter( ______== ______) %>% 
+  group_by(______) %>% 
+  ______() 
+
+```
+```{r}
+## Your code here
+
+```
+
+2. Now that you have stored the border information, add another layer on our most recent mapping code to map the border of Jakarta area. Again, you can use the skeleton below to prepare the layer you need:
+```r
+addPolylines(
+    data = ______,
+    color = "darkred",
+    opacity = .8,
+    weight = 2.5
+  )
+```
+
+```{r}
+## Your code here
+
+```
+
+3. Once your done, feel free to modify the code elements to create your own map customization. For your reference, you can go to leaflet for R's documentation [here](https://rstudio.github.io/leaflet)!
+
+```{r}
+## Your code her
+
+
+```
+
+
+***
+
+**Complete Code**:
 
 
 ```{r}
-# color
-#bins <- quantile(idn_sf_df$harga_m2, na.rm = T)
-#pal <- colorBin("YlOrRd", domain = df_agg$harga_m2)
+pal <- colorNumeric(palette = "Reds", domain = df_agg$harga_m2)
 
-# df_agg %>% 
-# leaflet() %>% 
-#   addTiles() %>% 
-#   addPolygons(
-#     fillColor = ~pal(harga_m2),
-#     fillOpacity = 0.7,
-#     color = "#444444",
-#     weight = 1,
-#     label = ~harga_m2
-#   ) %>%
-#   addLegend(pal = pal,
-#             values = ~n,
-#             opacity = 0.7,
-#             title = NULL,
-#             position = "bottomright")
+labels <- glue::glue("
+  <b>{df_agg$kecamatan}, {df_agg$kota}</b>:<br> {round(df_agg$harga_m2/1e6, 2)} jt/m2"
+) %>% lapply(htmltools::HTML)
+
+border  <- df_agg %>% 
+  filter(NAME_1 == "Jakarta Raya") %>% 
+  group_by(NAME_1) %>% 
+  summarise() 
+
+leaflet(df_agg) %>% 
+  addProviderTiles(providers$Esri.NatGeoWorldMap) %>%  # using `addProviderTiles()` instead of `addTiles()`
+  addPolygons(
+    label = labels,
+    labelOptions = labelOptions(
+      style = list(
+        "font-size"="13px",
+        "background-color"="black",
+        "color"="white"
+      )
+    ),
+    weight = 2,
+    color = "white",
+    fillOpacity = .8,
+    fillColor = ~pal(harga_m2),
+     highlight = highlightOptions(
+    weight = 5,
+    color = "black",
+    bringToFront = TRUE,
+    sendToBack = TRUE,
+    opacity = 0.8)
+  ) %>% 
+  addPolylines(
+    data = border,
+    color = "darkred",
+    opacity = .8,
+    weight = 2.5
+  ) %>% 
+  addLegend(
+    pal = pal,
+    values = ~harga_m2,
+    opacity = 1,
+    title = "Harga/m2",
+    position = "bottomright"
+  ) %>%
+  fitBounds(106.686211, -6.370783, 106.972824, -6.089036)
 ```
 
+# More Thematic Maps
 
-# [Bonus:] Other Mapping Packages
+In general, spatial data can be represented either as **reference maps** or **thematic maps**. While reference maps emphasizes the location of objects in the world, thematic maps shows the spatial variability of a specific distribution. The house pricing distribution map we created earlier is among the most frequently used thematic map types in geospatial data, which is the **Choropleth map**.
 
+```{r thematic-map, echo = FALSE, out.width = '100%',fig.align = "center", fig.cap="Source: [Mapping Ideas from Cyberspace to Realspace](http://mappingideas.sdsu.edu/CaliforniaAtlas/atlas/pages/10_types_of_maps.pdf)"}
+knitr::include_graphics("img/thematic-map.png")
+```
+As an example, let's take a look at this dataset of Perumahan (housing estate) locations in Jakarta area:
 
+```{r}
+perum <- read.csv('data/perumahan.csv')
+head(perum)
+```
 
-### tmap
+Let's try to create a dot density map using `leaflet`'s `addCircles()` function:
+
+```{r}
+leaflet(perum) %>% 
+  addTiles() %>% 
+  addCircles(label = ~perumahan)
+  
+```
+
+Another common way of representing geographical density map is by using a heatmap. To create a heatmap in leaflet, we can use `leaflet.extras` package:
+
+```{r}
+library(leaflet.extras)
+
+leaflet(perum) %>% 
+  addTiles() %>%
+  addCircles(
+    label = ~perumahan,
+    color = "red"
+  ) %>% 
+  addHeatmap(
+    radius = 10
+  ) 
+```
+
+# [Optional:] Other Mapping Packages
+
+Geospatial mapping is an active area in R community, which makes R loaded with many other packages that supported spatial visualization. Packages like `cartography`, `mapview`, `ggspatial`, `rasterVis` and many other libraries that you can explore. Other than `ggplot2` and `leaflet` that we used in this workshop, `tmap` is also one of the most popular package used to create both static and interactive maps in R.
+
+`tmap` also works similarly with `ggplot2`, since it is also based on the idea of Grammar of Graphics[^6]:
 
 ```{r}
 library(tmap)
-```
 
-```{r}
 tm_shape(df_agg)+
-  tm_polygons(c("harga_m2")) 
+  tm_polygons("harga_m2")
 ```
-
+Just like how you can use facets in `ggplot2`, you can also create it with `tm_facets()`, for example, to split our map based on each city:
 
 ```{r}
 tm_shape(df_agg) +
     tm_polygons("harga_m2") +
     tm_facets(by = "kota")
 ```
+`tmap` also has a nice feature that allows us to add interactivity by switching from "plot" to "view" mode like so:
 
 ```{r}
+tmap_mode("view")
+
 tm_shape(df_agg)+
-  tm_polygons(c("harga_m2")) 
+  tm_polygons("harga_m2") +
+  tm_bubbles("total_listings")
 ```
+
+# Publishing your Map
+
 
 
 
@@ -489,5 +729,7 @@ tm_shape(df_agg)+
 # References
 [^1]: [Kristin Stock, Hans Guesgen, in Automating Open Source Intelligence, 2016](https://www.elsevier.com/books/T/A/9780128029169)
 [^2]: [Edzer Pebesma, Daniel Nüst, and Roger Bivand, “The R Software Environment in Reproducible Geoscientific Research,” Eos 93 (2012): 163–164.](https://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/2012EO160003)  
-[^3]: [ R-Spatial](https://r-spatial.github.io/sf/)
-[^4]: [Geocomputation with R](https://geocompr.robinlovelace.net/spatial-class.html)
+[^3]: [Edzer Pebesma, Roger Bivand, Spatial Data Science](https://keen-swartz-3146c4.netlify.app/)
+[^4]: [Robin Lovelace, Jakub Nowosad, Jannes Muenchow, "Geocomputation with R"](https://geocompr.robinlovelace.net/spatial-class.html)
+[^5]: [Leaflet for R](https://rstudio.github.io/leaflet/)
+[^6]: [Wilkinson, Leland, and Graham Wills. 2005. The Grammar of Graphics. Springer Science+ Business Media.](https://www.springer.com/de/book/9780387245447)

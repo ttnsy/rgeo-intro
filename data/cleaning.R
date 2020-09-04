@@ -1,5 +1,52 @@
 library(tidyverse)
 library(magrittr)
+library(qdapRegex)
+library(tidygeocoder)
+library(glue)
+
+# for perum data ----------------------------------------------------------
+
+# read and clean
+perum <- read_csv("data/scraping/perum.csv") %>% 
+  select(-X1)
+
+perum %<>% 
+  mutate(
+    perum = ex_between(perum, '<p class=\"venue-front-title\">','</p>\n'),
+    kota = ex_between(detail, 'class=\"fa fa-map-marker\"></span>\n','<br/>\n<span class=\"fa fa-arrow-up\">',
+                      '<br/>\n<span class=\"fa fa-arrow-up\">')
+  ) %>% 
+  select(-detail) %>% 
+  mutate(
+    kota = str_remove(kota, ",.*")
+  ) %>% 
+  distinct()%>%
+  rename(perumahan = perum)
+
+# get long-lat
+mylist <- split(perum, perum$kota)
+
+for (i in 1:length(mylist)){
+  mylist[[i]] %<>% 
+  mutate(perum_kota = glue("{perumahan}, {kota}")) %>% 
+  geocode(perum_kota, method = 'osm', lat = latitude , long = longitude, full_results=TRUE)
+}
+
+perum <- bind_rows(mylist) %>% 
+  drop_na(latitude, longitude) %>% 
+  select(perumahan, kota, latitude, longitude)
+
+perum <- perum %>% 
+  filter(!(perumahan %in% c('Marcella Residence','The Rose House',
+                            'serpong lagoon','Casa Jardin',
+                            'Camden House')))
+
+# write as csv
+write_csv(perum, "data/perumahan.csv")
+
+
+
+# for housing data --------------------------------------------------------
 
 house <- read_csv("data/scraping/housing.csv") %>% 
   select(-X1)
@@ -56,4 +103,6 @@ house %<>%
   filter(harga < 50000000000 & harga > 5e6) %>% 
   filter(m2 >= 18)
 
-write_csv(house, "data/housing_jkt.csv")
+# write as csv
+
+write_csv(house, "data/listings.csv")
