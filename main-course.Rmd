@@ -1,0 +1,491 @@
+---
+title: "Online DSS: Visualizing Geospatial Data in R"
+subtitle: 'Part 2. Static & Interactive Map for Geospatial Analysis'
+author: "Team Algoritma"
+date: "9/2/2020"
+output: 
+  bookdown::html_document2:
+    toc: true
+    toc_depth: 2
+    toc_float: 
+      collapsed: false
+    number_sections: true
+    theme: flatly
+    highlight: tango
+    css: assets/style.css
+---
+
+```{r setup, include=FALSE}
+# clean up the environment
+rm(list = ls())
+# setup chunk options
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  comment = "#>"
+)
+options(scipen = 9999)
+
+```
+
+
+The following coursebook is the main part for _Online Data Science Series: Visualizing Geospatial Data in R_ workshop produced by the team at [**Algoritma**](http://algorit.ma/) . The coursebook is intended for a restricted audience only, i.e. the individuals having received this coursebook directly from the training organization. It may not be reproduced, distributed, translated or adapted in any form outside these individuals and organizations without permission.
+
+[**Algoritma**](http://algorit.ma/) is a data science education center based in Jakarta. We organize workshops and training programs to help working professionals and students gain mastery in various data science sub-fields: data visualization, machine learning, data modeling, statistical inference, etc.
+
+Before you go ahead and run the codes in this coursebook, it’s often a good idea to go through some initial setup. Under the **Training Objectives** section we’ll outline the syllabus, identify the key objectives and set up expectations for each module. Under the **Libraries and Setup** section you’ll see some code to initialize our workspace and the libraries we’ll be using for the projects. You may want to make sure that the libraries are installed beforehand by referring back to the packages listed here. 
+
+# Preface {.tabset}
+
+## Introduction
+
+Geospatial data is data about objects, events, or phenomena that have a location on the surface of the earth. The data combines location information (usually coordinates on the earth), attribute information (the characteristics of the object, event, or phenomena concerned), and often also temporal information (the time or life span at which the location and attributes exist)[^1].
+
+Geospatial analysis uses this data to build maps, graphs, statistics, and cartograms, making complex relationships understandable. It introduces a formal techniques using geographic and geometry properties of a data. There are various business problems that can be solved using geospatial analysis, namely a few:  
+
+- Warehouse logistics optimization  
+- Market growth analysis for different regions  
+- Sales demand forecasting  
+- Work resource management  
+
+There are actually a plethora of tools that can visualize geographic information from full-scale GIS (Geographic Information System) applications such as [ArcGIS](https://www.arcgis.com/index.html) and [QGIS](https://qgis.org/en/site/) to web-based tools like [Google maps](http://maps.google.com/) to any number of programing languages. But, with advantages and disadvantages to these different types of tools, using a command-line interface has a steep learning curve, but it has the benefit of enabling approaches to analysis and visualization that are customizable, transparent, and reproducible[^2].
+
+This 4-days online workshop is a beginner-friendly introduction to **Geospatial Analysis in R**. By visualizing geospatial data, users can have more intuitive decision making by contextualizing data in the real world, comparing informations across the city, state, or country.
+
+## Training Objectives
+
+This is the first online data science series course of _Geospatial Analysis in R_. The primary objective of this course is to provide a participant a comprehensive introduction about tools and software for visualizing a geospatial data using the popular open-source tools: R. The material will covers:
+
+**Introductory Module:**
+
+* **Tools Introduction**  
+  + R and R Studio  
+  + Open source packages  
+  + Using R Markdown  
+  + R Programming Basics  
+* **Data Wrangling with R's `tidyverse`**  
+  + Working with tabular data in R: Tips and Techniques 
+  + Data Wrangling and Aggregation
+  + Introduction to visualization with `ggplot2`
+  
+***
+**Main Module:**
+
+* **Building Indonesia Static Map**  
+  - Retrieving Indonesia spatial vector from an open source provider
+  - Working with spatial polygon in R
+  - Grammar of Graphics for geospatial data using `ggplot2`
+  - Enhancing map plots for richer visualization 
+* **Creating Interactive Map**
+  - Using `leaflet` - a JavaScript API for creating interactive maps
+  - Adding markers and colors in `leaflet`
+  - Building various geospatial analysis graphics: Heatmap, Choropleth, and Connection Map
+* **Publishing your visualization**
+  - Explore various publication options using `rmarkdown` versatile output 
+  - Create an awesome and easy-to-build dashboard using `flexdashboard` package
+  - Present your geospatial analysis for various industries business solution
+
+## Library and Setup
+
+In this **Library and Setup** section you’ll see some code to initialize our workspace, and the packages we’ll be using for this project. 
+
+_Packages_ are collections of R functions, data, and compiled code in a well-defined format. The directory where packages are stored is called the _library_. R comes with a standard set of packages. Others are available for download and installation. Once installed, they have to be loaded into the session to be used. 
+
+You will need to use `install.packages()` to install any packages that are not yet downloaded onto your machine. To install packages, type the command below on your console then press ENTER.
+
+```{r eval=FALSE}
+## DO NOT RUN CHUNK
+packages <- c("tidyverse", "maps","rgdal","tmap","sf")
+
+install.packages(packages)
+```
+
+Then you need to load the package into your workspace using the `library()` function. Special for this course, the _rmarkdown_ packages do not need to be called using `library()`.
+
+```{r}
+# package for data wrangling & vis
+library(tidyverse)
+library(glue)
+
+# package for visualization
+library(scales)
+
+# package for spatial analysis in R
+library(sf)
+
+```
+
+# Geospatial Analysis in R
+
+**Geospatial analysis**, as the main topic of this workshop, is a domain of analysis that focuses on data processing that is associated with geographic data. With unlisted potentials for many business domain analysis, in this main section of the workshop, we will try to learn the building blocks of geospatial data and combines it with a business use case example in order to visualize our data as an insightful map.
+
+We will explore how to use and obtain geospatial data in R to create some of the most popular types of thematic maps; choropleth (static and interactive) and interactive heatmap.
+
+## Spatial Data Types & Formats
+
+Let's have a quick glimpse on a simple geospatial visualization in R by running the code chunk below:
+
+
+```{r}
+maps::map("world", fill = TRUE, col = "darkseagreen")
+```
+The code above projected countries around the world as a static map. But, how does geographic data information stored? How could we obtain detail information on geographic contours or territorial borders?
+
+```{r rastervect, echo = FALSE, out.width="55%",fig.align = "center", fig.cap="Illustration on Vector vs. Raster"}
+knitr::include_graphics("img/rastervector.jpg")
+```
+
+The two most widely used geographic data models for spatial data are **vector** and **raster**. A vector data represents location and shape of geographic features through geometric shapes such as points, lines and polygons. Raster data, on the other hand, consists of values within a grid system. You can imagine raster data as a pixelated digital image such as a satellite imagery or a scanned map.
+
+There are lots of data formats that can be used to store each data model. *KML*, *GeoJSON*, *GeoTIFF*, *Tab File*, are some of the common formats you might ever came accross. However, the most common format in geographic information system mapping is the **Shapefile**.
+
+**Shapefile** is the universal standard of geospatial format developed and regulated by [Esri](https://www.esri.com/en-us/home), the international supplier of geographic information system softwares. The type format is then adopted by so many programming languages, including R.
+
+The name Shapefile might be a little deceptive since the file is made up of at least three separate files: 
+
+- `.shp` includes the geometry data    
+- `.shx` includes the index data used to identify different geometries    
+- `.dbf` includes attribute information of each geometry's data.
+
+For this workshop, I have provided a shapefile for Indonesian territory under `data/gadm36_IDN_3` folder of this directory. Notice that inside the directory, there are reading there are additional files other than 3 mandatory files listed above:  
+
+- `.prj` includes the information of the coordinate reference system    
+- `.cpg` includes encoding information for the variable attribute stored in `.dbf` files
+
+
+The shapefile itself is made available by [GADM](https://gadm.org/about.html). If you go ahead to the website you can pick out different countries spatial vector. Indonesia's spatial vector is provided up to 4 levels of granularity. In this course we'll be working with 3 levels of spatial vector that contains:  
+
+- Provinsi  
+- Kabupaten  
+- Kecamatan  
+
+
+
+***
+**Extra Tip**:  
+You can also access GADM database directly from R with the help of [`GADMTools`](https://github.com/Epiconcept-Paris/GADMTools) library:
+
+  ```r
+  # Code example to load Indonesia's spatial vector in Kabupaten/Kota level  
+  library(GADMTools)  
+  library(sf)  
+  map <- gadm_sf_loadCountries(c("IDN"), level=2, basefile = "./")  
+  plotmap(map)  
+  ```
+
+***
+
+
+## R's Spatial Ecosystem
+
+Let's read in the files using `st_read()` function from `sf` package:
+
+```{r}
+idn3 <- st_read(dsn = "data/gadm36_IDN_3", layer = "gadm36_IDN_3")
+```
+
+`sf` represents "Simple Features" as records in a data.frame or tibble with a geometry list-column[^3]. **Simple Features** is a hierarchical data model that represents a wide range of geometry types. Of 17 geometry types supported by the specification, only 7 are used in the vast majority of geographic research [^4]:
+
+```{r geom, echo = FALSE, out.width="80%",fig.align = "center", fig.cap="Source:[Geocomputation with R](https://geocompr.robinlovelace.net/)"}
+knitr::include_graphics("img/geom.png")
+```
+
+If you use the `class()` function for our newly created `idn3` object you can retrieved how the `sf` class handles spatial data in similar way as any tabular data structure; by stores it as a dataframe:
+
+```{r}
+class(idn3)
+```
+
+The main difference between a regular dataframe an an `sf` object is that it has `geometry` which describes where on Earth the feature is located, and they have attributes, which describe other properties[^3]:
+
+```{r}
+idn3$geometry
+```
+
+To get a better idea about `geometry` information in an `sf` object, let's go ahead and plot `idn3$geometry` using `plot()` function:
+
+```{r}
+plot(idn3$geometry)
+```
+
+There are several informations that is stored in an `sf`'s `geometry`:
+
+- **Geometry Type**: There are seven most common geometry types in simple feature: `POINT`, `LINESTRING`, `POLYGON`, `MULTIPOINT`, `MULTILINESTRING`, `MULTIPOLYGON` and `GEOMETRYCOLLECTION`.
+- **Dimension**: Refers to a 2-(`XY`), 3-(`XYZ`/`XYM`) or 4-dimensional (`XYZM`) space. 
+- **Bbox (Bounding Box)**: an area defined by two longitudes and two latitudes.
+- **CRS**: Coordinate Reference System.
+
+A CRS is a fundamental component of geospatial data. It models earth surface into a mathematical model. Intuitively, you could think of it as a way to model a 3 dimensional surfaces such as earth, into a 2 dimensional surface that is commonly used in geospatial analysis: making maps, distance calculation, etc. Take a look at the following images for better illustration:  
+
+```{r crs, echo = FALSE, out.width="80%",fig.align = "center", fig.cap="Source:[DataCarpentry](https://datacarpentry.org/)"}
+knitr::include_graphics("img/crs.jpg")
+```
+
+If we were using geospatial data from different sources, it is important to make sure the data we are using has the same CRS attribute. A different CRS would not represented in the same mathematical space if combined and would alter any calculation done on the data significantly.
+
+### Extra notes on Simple Features
+
+Other than `sf`'s simple features, there are actually other methodologies for storing model of geographical features into R. If you ever ran into a geospatial studies in R, you may also familiar with the use of `sp` package. In fact, `sp` was a very-well developed package since 2005 which practically supported almost every GIS analysis in R, even until now.
+
+The main problem of `sp` is its low compatibility to R dataframe structure. `sf` was built to fill the gap. Released in 2016, `sf` uses OGC (Open Geospatial Consortium) & ISO standard on recording and structuring spatial data with [*simple features*](https://r-spatial.github.io/sf/articles/sf1.html). 
+
+The disadvantage of `sf` is, since it is relatively new, some spatial packages may have not yet added support for `sf` object.  Fortunately, we can stil convert an `sf` object to spatial class used in `sp`:
+
+```{r}
+library(sp)
+idn3_sp <- as(idn3, Class = "Spatial")
+
+class(idn3_sp)
+```
+
+Spatial objects can be converted back to `sf` in the same way or with `sf`'s `st_as_sf()` function:
+
+```{r}
+idn3_sf <- st_as_sf(idn3_sp)
+
+class(idn3_sf)
+```
+
+***
+**Notes**:
+
+If you want to learn more about `sp` and how to work with spatial data using `sp` ecosystem, you can refer to "`sp-example.Rmd`" in this directory.
+
+***
+
+# Hands On: Jakarta House Pricing Distribution
+
+## Data Preprocessing
+
+Now let's head back to our `housing_jkt`, a data consists of properties listed for sale in Jabodetabek area:
+
+```{r}
+df <- read.csv("data/housing_jkt.csv")
+head(df)
+```
+Here, we want to compare the house pricing for each sub-district (`Kecamatan`) level. Since the size of the listed properties may vary, we'll use the price per square meter instead:
+
+```{r}
+df_agg <- df %>% 
+  mutate(
+    harga_m2 = harga / m2
+  ) %>% 
+  group_by(kota, kecamatan) %>% 
+  summarise(harga_m2 = median(harga_m2),
+            total_listings= n()) %>% 
+  ungroup()
+
+head(df_agg)
+```
+
+To project our `housing` data into a map, we need to equip each observation in the data with geographical information representation. We can do this by joining the information of the city (`kota`) & sub-district (`kecamatan`) to `NAME_2` & `NAME_3` variables respectively in `idn3`: 
+
+```{r}
+idn3 %>% 
+  as.data.frame() %>% 
+  head()
+```
+To join two dataframes in R, we can use the `*_join()` function from `dplyr` package:
+
+```{r}
+df_agg <- df_agg %>% 
+  left_join(idn3, by = c("kota" = "NAME_2", "kecamatan" = "NAME_3"))
+
+head(df_agg)
+```
+Now that our `df_agg` data have the geographic attributes attached, we can turn it into an `sf` object using `st_as_sf()` function:
+
+```{r}
+df_agg <- st_as_sf(df_agg)
+
+df_agg$geometry
+```
+
+## Building Maps in R
+
+### Creating Maps with `ggplot2`
+
+R is loaded with built-in tools and open source packages to help us turning both `sp` and `sf` objects into a neat map visualization. In the first session of this workshop, you have learned about a widely used and powerful plotting library for R, `ggplot2`. The great thing is that `ggplot` can plot `sf` objects directly by using `geom_sf`. 
+
+Recall about the `ggplot2` layering system and see the code below:
+
+```{r}
+ggplot(df_agg)+ # add base canvas
+  geom_sf() # plot the geometry
+```
+You can also easily map the color of `harga_m2` by adding the variable inside the `aes()` in the geom element:
+
+```{r}
+ggplot(df_agg)+
+  geom_sf(aes(fill = harga_m2)) 
+```
+With small adjustments and feature additions, we have built a nice geographic representation of house pricing in Jakarta. Notice that in the chunk below, I added a layer of `theme_algo_map()`, which was a customized map I created for this workshop. (You can also create your own theme too!)
+
+The modularity of `ggplot2` also allows us to save it as an external file, makes it easy for us to make a reproducible custom theming. You can find the code for `theme_algo_map()` under `assets/theme_algo.R`.
+
+```{r}
+source('assets/theme_algo.R')
+
+plot <- ggplot(df_agg)+
+  geom_sf(aes(fill = harga_m2)) +
+  labs(title = "Distribusi Harga Rumah di Jabodetabek",
+       subtitle = "Hasil sample harga di marketplace properti",
+       caption = "Sample menggunakan ±10,000 listing rumah di laman jual-beli rumah OLX\n September 2020",
+       fill = "Harga/m2")+
+  scale_fill_gradient(low = "lavenderblush", high = "red3",
+                      labels = number_format(scale = 1/1e6, suffix = " Jt.", accuracy = 1))+
+  theme_algo_map()
+
+plot
+```
+Another benefit of creating maps with `ggplot2` is how we can easily add a level of interactivity by simply use `ggplotly()` function from the plotly package. 
+
+Since we have stored our most recent plot creation as an object named `plot`, let's try to wrap it with `ggplotly(plot)`.
+
+(*P.S. If you haven't install the plotly package, you can run `install.packages("plotly")` through your console*)
+
+```{r}
+library(plotly)
+
+ggplotly(plot)
+```
+
+You can also add another adjustments such as customizing the tooltip and hide the mode bar for cleaner appearance:
+
+```{r}
+# create new column to store the tooltip information
+df_agg <- df_agg %>% 
+  mutate(text = glue("{kecamatan}, {kota}: <br> {number(harga_m2, scale = 1/1e6, suffix = 'Jt.', accuracy = .01)}"))
+
+# re-run the function to create plot
+plot <- ggplot(df_agg, aes(text = text))+ # add new aes mapping: text to define the tooltip text
+  geom_sf(aes(fill = harga_m2)) +
+  labs(title = "Distribusi Harga Rumah di Jabodetabek",
+       subtitle = "Hasil sample harga di marketplace properti",
+       caption = "Sample menggunakan ±10,000 listing rumah di laman jual-beli rumah OLX\n September 2020",
+       fill = "Harga/m2")+
+  scale_fill_gradient(low = "lavenderblush", high = "red3",
+                      labels = number_format(scale = 1/1e6, suffix = " Jt.", accuracy = 1))+
+  theme_algo_map()
+
+
+# re-run the `ggplotly`
+ggplotly(plot, tooltip = "text") %>% # define tooltip
+  config(displayModeBar = F) # hide the modebar
+```
+
+### Interactive Mapping with `leaflet`
+
+Among all available mapping packages in R, `leaflet` has became the most widely used for building interactive maps in R. It provides a relatively low-level interface to the Leaflet JavaScript library. The full documentation of the package can be accessed [here](https://rstudio.github.io/leaflet/). 
+
+
+```{r}
+library(leaflet)
+```
+
+```{r}
+# leaflet
+
+m <- leaflet(df_agg) %>% 
+  addTiles() %>% 
+  addPolygons()
+
+m
+```
+
+
+```{r}
+labels <- glue::glue("
+  <b>{df_agg$kecamatan}, {df_agg$kota}</b>:<br> {round(df_agg$harga_m2/1e6, 2)} jt/m2"
+) %>% lapply(htmltools::HTML)
+
+pal <- colorBin("YlOrRd", domain = df_agg$harga_m2)
+
+df_agg %>%
+st_as_sf() %>%
+
+leaflet() %>%
+addTiles() %>% 
+addPolygons(
+  label = labels,
+  fillColor = ~pal(harga_m2),
+  weight = 2,
+  opacity = 1,
+  color = "darkred",
+  dashArray = "3",
+  fillOpacity = 0.6,
+  highlight = highlightOptions(
+    weight = 5,
+    color = "black",
+    fillOpacity = 0.7,
+    bringToFront = TRUE)) %>% 
+  addLegend(pal = pal,
+            values = ~n,
+            opacity = 0.7,
+            title = NULL, 
+            position = "bottomright")
+```
+
+
+
+
+
+```{r}
+# color
+#bins <- quantile(idn_sf_df$harga_m2, na.rm = T)
+#pal <- colorBin("YlOrRd", domain = df_agg$harga_m2)
+
+# df_agg %>% 
+# leaflet() %>% 
+#   addTiles() %>% 
+#   addPolygons(
+#     fillColor = ~pal(harga_m2),
+#     fillOpacity = 0.7,
+#     color = "#444444",
+#     weight = 1,
+#     label = ~harga_m2
+#   ) %>%
+#   addLegend(pal = pal,
+#             values = ~n,
+#             opacity = 0.7,
+#             title = NULL,
+#             position = "bottomright")
+```
+
+
+# [Bonus:] Other Mapping Packages
+
+
+
+### tmap
+
+```{r}
+library(tmap)
+```
+
+```{r}
+tm_shape(df_agg)+
+  tm_polygons(c("harga_m2")) 
+```
+
+
+```{r}
+tm_shape(df_agg) +
+    tm_polygons("harga_m2") +
+    tm_facets(by = "kota")
+```
+
+```{r}
+tm_shape(df_agg)+
+  tm_polygons(c("harga_m2")) 
+```
+
+
+
+
+# References
+[^1]: [Kristin Stock, Hans Guesgen, in Automating Open Source Intelligence, 2016](https://www.elsevier.com/books/T/A/9780128029169)
+[^2]: [Edzer Pebesma, Daniel Nüst, and Roger Bivand, “The R Software Environment in Reproducible Geoscientific Research,” Eos 93 (2012): 163–164.](https://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/2012EO160003)  
+[^3]: [ R-Spatial](https://r-spatial.github.io/sf/)
+[^4]: [Geocomputation with R](https://geocompr.robinlovelace.net/spatial-class.html)
