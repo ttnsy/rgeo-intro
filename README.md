@@ -29,8 +29,8 @@ The following coursebook is produced for [Algoritma](https://algorit.ma/)'s DSS 
         - Using `leaflet` - a JavaScript API for creating interactive maps
         - Adding markers and colors in `leaflet`
         - Building various geospatial analysis graphics: Choropleth, Heatmap, etc.
-    * Publishing your visualization
-        - Create an awesome and easy-to-build [dashboard](dashboard-geo.Rmd) using `flexdashboard` package
+    * [Publishing your visualization](dashboard-geo.Rmd)
+        - Create an awesome and easy-to-build [dashboard](https://rpubs.com/tangerine/dss-geospatial) using `flexdashboard` package
         - Present your geospatial analysis for various industries business solution
 
 - [Additional: Demo for R's`sp` package](sp-example.Rmd)
