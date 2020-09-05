@@ -18,7 +18,7 @@ The following coursebook is produced for [Algoritma](https://algorit.ma/)'s DSS 
         + Working with tabular data in R: Tips and Techniques 
         + Data Wrangling and Aggregation
         + Introduction to visualization with `ggplot2`
-<br>
+
 - [Part 2. Geospatial Analysis in R](main-course.Rmd)
     * Building Indonesia Static Map
         - Retrieving Indonesia spatial vector from an open source provider
@@ -30,9 +30,9 @@ The following coursebook is produced for [Algoritma](https://algorit.ma/)'s DSS 
         - Adding markers and colors in `leaflet`
         - Building various geospatial analysis graphics: Choropleth, Heatmap, etc.
     * Publishing your visualization
-        - Create an awesome and easy-to-build dashboard using `flexdashboard` package
+        - Create an awesome and easy-to-build [dashboard](dashboard-geo.Rmd) using `flexdashboard` package
         - Present your geospatial analysis for various industries business solution
-<br>
+
 - [Additional: Demo for R's`sp` package](sp-example.Rmd)
 
 ## R packages
