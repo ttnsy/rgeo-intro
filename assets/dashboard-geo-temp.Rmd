@@ -1,0 +1,41 @@
+---
+title: "Analisis Pasar Properti Jabodetabek"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: readable
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+```
+
+
+Disclaimer {.sidebar}
+-------------------------------------
+
+**Disclaimer**:  
+
+Dashboard ini dibuat hanya untuk kepentingan edukasi membuat dashboard dan peta interaktif menggunakan R.
+
+Data yang ditampilkan merupakan hasil sample cepat dari ±10,000 rumah yang dijual di salah satu situs marketplace di Indonesia pada September 2020. Nilai yang di tampilkan belum tentu merepresentasikan harga yang sebenarnya. 
+
+
+Column
+-------------------------------------
+
+### Component A
+
+```{r}
+
+```
+
+
+Column
+-------------------------------------
+
+### Component B
+
+```{r}
+
+```
+

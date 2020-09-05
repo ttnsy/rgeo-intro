@@ -1,0 +1,131 @@
+---
+title: "Analisis Pasar Properti Jabodetabek"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: readable
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(glue)
+library(scales)
+library(sf)
+library(plotly)
+library(leaflet)
+library(leaflet.extras)
+
+# read data
+idn <- st_read(dsn = "shp", layer = "idn")
+df <- read.csv("data/listings.csv")
+
+# aggregate
+df_agg <- df %>% 
+  mutate(
+    harga_m2 = harga / m2
+  ) %>% 
+  group_by(kota, kecamatan) %>% 
+  summarise(harga_m2 = median(harga_m2),
+            total_listings= n()) %>% 
+  ungroup() %>% 
+  left_join(idn, by = c("kota" = "NAME_2", "kecamatan" = "NAME_3")) %>% 
+  st_as_sf()
+
+```
+
+Disclaimer {.sidebar}
+-------------------------------------
+
+**Disclaimer**:  
+
+Dashboard ini dibuat hanya untuk kepentingan edukasi membuat dashboard dan peta interaktif menggunakan R.
+
+Data yang ditampilkan merupakan hasil sample cepat dari ±10,000 rumah yang dijual di salah satu situs marketplace di Indonesia pada September 2020. Nilai yang di tampilkan belum tentu merepresentasikan harga yang sebenarnya. 
+
+
+Column
+-------------------------------------
+
+### Sebaran Harga Rumah per Kecamatan
+
+```{r}
+pal <- colorNumeric(palette = "Reds", domain = df_agg$harga_m2)
+
+labels <- glue::glue("
+  <b>{df_agg$kecamatan}, {df_agg$kota}</b>:<br> {round(df_agg$harga_m2/1e6, 2)} jt/m2"
+) %>% lapply(htmltools::HTML)
+
+border  <- df_agg %>% 
+  filter(NAME_1 == "Jakarta Raya") %>% 
+  group_by(NAME_1) %>% 
+  summarise() 
+
+leaflet(df_agg) %>% 
+  addProviderTiles(providers$CartoDB.DarkMatter) %>%  
+  addPolygons(
+    label = labels,
+    labelOptions = labelOptions(
+      style = list(
+        "font-size"="13px",
+        "background-color"="black",
+        "color"="white"
+      )
+    ),
+    weight = 2,
+    color = "white",
+    fillOpacity = .8,
+    fillColor = ~pal(harga_m2),
+     highlight = highlightOptions(
+    weight = 5,
+    color = "black",
+    bringToFront = TRUE,
+    sendToBack = TRUE,
+    opacity = 0.8)
+  ) %>% 
+  addPolylines(
+    data = border,
+    color = "darkred",
+    opacity = .8,
+    weight = 3
+  ) %>% 
+  addLegend(
+    pal = pal,
+    values = ~harga_m2,
+    opacity = 1,
+    title = "Harga/m2",
+    position = "bottomright"
+  ) %>%
+  fitBounds(106.686211, -6.370783, 106.972824, -6.089036)
+```
+
+Column
+-------------------------------------
+
+### Tabel Rata-rata Harga per Kecamatan 
+
+```{r}
+library(DT)
+
+data <- df_agg %>% 
+  as.data.frame() %>% 
+  arrange(desc(harga_m2)) %>% 
+  select(kota, kecamatan, harga_m2) %>% 
+  mutate(harga_m2 = number(harga_m2, big.mark = ",")) %>% 
+  rename(
+    Kota = kota,
+    Kecamatan = kecamatan,
+    `Harga/m2` = harga_m2
+  ) 
+
+DT::datatable(
+  data,
+  extensions = "Buttons",
+  options = list(
+    pageLength = 25,
+    dom = 'Bfrtip',
+    buttons = c('csv','excel','pdf')
+  )
+)
+```
+
+

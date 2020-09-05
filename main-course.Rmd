@@ -1,6 +1,6 @@
 ---
 title: "Online DSS: Visualizing Geospatial Data in R"
-subtitle: 'Part 2. Static & Interactive Map for Geospatial Analysis'
+subtitle: 'Part 2. Geospatial Analysis in R'
 author: "Team Algoritma"
 date: "9/2/2020"
 output: 
@@ -31,9 +31,7 @@ options(scipen = 9999)
 ```
 
 
-The following coursebook is the main part for _Online Data Science Series: Visualizing Geospatial Data in R_ workshop produced by the team at [**Algoritma**](http://algorit.ma/) . The coursebook is intended for a restricted audience only, i.e. the individuals having received this coursebook directly from the training organization. It may not be reproduced, distributed, translated or adapted in any form outside these individuals and organizations without permission.
-
-[**Algoritma**](http://algorit.ma/) is a data science education center based in Jakarta. We organize workshops and training programs to help working professionals and students gain mastery in various data science sub-fields: data visualization, machine learning, data modeling, statistical inference, etc.
+The following coursebook is the main part for _Online Data Science Series: Visualizing Geospatial Data in R_ workshop produced by the team at [**Algoritma**](http://algorit.ma/) . [**Algoritma**](http://algorit.ma/) is a data science education center based in Jakarta. We organize workshops and training programs to help working professionals and students gain mastery in various data science sub-fields: data visualization, machine learning, data modeling, statistical inference, etc.
 
 Before you go ahead and run the codes in this coursebook, it’s often a good idea to go through some initial setup. Under the **Training Objectives** section we’ll outline the syllabus, identify the key objectives and set up expectations for each module. Under the **Libraries and Setup** section you’ll see some code to initialize our workspace and the libraries we’ll be using for the projects. You may want to make sure that the libraries are installed beforehand by referring back to the packages listed here. 
 
@@ -43,14 +41,14 @@ Before you go ahead and run the codes in this coursebook, it’s often a good id
 
 Geospatial data is data about objects, events, or phenomena that have a location on the surface of the earth. The data combines location information (usually coordinates on the earth), attribute information (the characteristics of the object, event, or phenomena concerned), and often also temporal information (the time or life span at which the location and attributes exist)[^1].
 
-Geospatial analysis uses this data to build maps, graphs, statistics, and cartograms, making complex relationships understandable. It introduces a formal techniques using geographic and geometry properties of a data. There are various business problems that can be solved using geospatial analysis, namely a few:  
+Geospatial analysis uses this data to build maps, graphs, statistics, and cartograms, making complex relationships understandable. It introduces a formal techniques using geographic and geometry properties of a data. There are various business problems that can be solved using geospatial analysis, namely a few:
 
 - Warehouse logistics optimization  
 - Market growth analysis for different regions  
 - Sales demand forecasting  
 - Work resource management  
 
-There are actually a plethora of tools that can visualize geographic information from full-scale GIS (Geographic Information System) applications such as [ArcGIS](https://www.arcgis.com/index.html) and [QGIS](https://qgis.org/en/site/) to web-based tools like [Google maps](http://maps.google.com/) to any number of programing languages. But, with advantages and disadvantages to these different types of tools, using a command-line interface has a steep learning curve, but it has the benefit of enabling approaches to analysis and visualization that are customizable, transparent, and reproducible[^2].
+There are actually many tools available for visualizing geographic information; from full-scale GIS (Geographic Information System) applications such as [ArcGIS](https://www.arcgis.com/index.html) and [QGIS](https://qgis.org/en/site/), to web-based tools like [Google maps](http://maps.google.com/) to any number of programming languages. With a broad range of packages, the use of R for geospatial analysis has risen in popularity. From geospatial statistics, modeling and visualization, its RStudio IDE also made R to be a user-friendly tool for map making and analysis.
 
 This 4-days online workshop is a beginner-friendly introduction to **Geospatial Analysis in R**. By visualizing geospatial data, users can have more intuitive decision making by contextualizing data in the real world, comparing informations across the city, state, or country.
 
@@ -81,7 +79,7 @@ This is the first online data science series course of _Geospatial Analysis in R
 * **Creating Interactive Map**
   - Using `leaflet` - a JavaScript API for creating interactive maps
   - Adding markers and colors in `leaflet`
-  - Building various geospatial analysis graphics: Heatmap, Choropleth, and Connection Map
+  - Building various geospatial analysis graphics: Choropleth, Heatmap, etc.
 * **Publishing your visualization**
   - Explore various publication options using `rmarkdown` versatile output 
   - Create an awesome and easy-to-build dashboard using `flexdashboard` package
@@ -97,7 +95,7 @@ You will need to use `install.packages()` to install any packages that are not y
 
 ```{r eval=FALSE}
 ## DO NOT RUN CHUNK
-# packages <- c("tidyverse", "maps","rgdal","tmap","sf")
+# packages <- c("rgdal","sf","tidyverse","glue", "plotly", "maps","leaflet","leaflet.extras", "tmap", "flexdashboard","DT")
 # 
 # install.packages(packages)
 ```
@@ -161,13 +159,13 @@ For this workshop, I have provided a shapefile for Indonesian territory under `s
 **Extra Tip**:  
 You can also access GADM database directly from R with the help of [`GADMTools`](https://github.com/Epiconcept-Paris/GADMTools) library:
 
-  ```r
-  # Code example to load Indonesia's spatial vector in Kabupaten/Kota level  
-  library(GADMTools)  
-  library(sf)  
-  map <- gadm_sf_loadCountries(c("IDN"), level=2, basefile = "./")  
-  plotmap(map)  
-  ```
+```
+# Code example to load Indonesia's spatial vector in Kabupaten/Kota level  
+library(GADMTools)  
+library(sf)  
+
+map <- gadm_sf_loadCountries(c("IDN"), level=2, basefile = "./")
+```
 
 ***
 
@@ -452,7 +450,7 @@ To access the supported tile providers, we can also use`providers$` and choose f
 
 ```{r}
 leaflet(df_agg) %>% 
-  addProviderTiles(providers$Esri.NatGeoWorldMap) %>%  
+   addProviderTiles(providers$CartoDB.DarkMatter) %>% 
   addPolygons()
 ```
 
@@ -469,7 +467,7 @@ Notice that on the next line, inside the `addPolygons()` function call, we also 
 pal <- colorNumeric(palette = "Reds", domain = df_agg$harga_m2)
 
 leaflet(df_agg) %>% 
-  addProviderTiles(providers$Esri.NatGeoWorldMap) %>%  
+   addProviderTiles(providers$CartoDB.DarkMatter) %>% 
   addPolygons(
     fillColor = ~pal(harga_m2),
     fillOpacity = .8,
@@ -483,7 +481,7 @@ To add more interaction to our map, we can also make the polygons highlight as t
 
 ```{r}
 leaflet(df_agg) %>% 
-  addProviderTiles(providers$Esri.NatGeoWorldMap) %>%  
+   addProviderTiles(providers$CartoDB.DarkMatter) %>% 
   addPolygons(
     fillColor = ~pal(harga_m2),
     fillOpacity = .8,
@@ -511,7 +509,7 @@ Then, to map it, we can add `label` argument inside the `addPolygons()` function
 
 ```{r}
 leaflet(df_agg) %>% 
-  addProviderTiles(providers$Esri.NatGeoWorldMap) %>%  
+   addProviderTiles(providers$CartoDB.DarkMatter) %>% 
   addPolygons(
     label = labels,
     fillColor = ~pal(harga_m2),
@@ -531,7 +529,7 @@ As the final step, we might also need to add a legend to give information about 
 
 ```{r}
 leaflet(df_agg) %>% 
-  addProviderTiles(providers$Esri.NatGeoWorldMap) %>%  
+   addProviderTiles(providers$CartoDB.DarkMatter) %>% 
   addPolygons(
     label = labels,
     fillColor = ~pal(harga_m2),
@@ -614,7 +612,7 @@ border  <- df_agg %>%
   summarise() 
 
 leaflet(df_agg) %>% 
-  addProviderTiles(providers$Esri.NatGeoWorldMap) %>%  # using `addProviderTiles()` instead of `addTiles()`
+   addProviderTiles(providers$CartoDB.DarkMatter) %>% # using `addProviderTiles()` instead of `addTiles()`
   addPolygons(
     label = labels,
     labelOptions = labelOptions(
@@ -702,6 +700,7 @@ library(tmap)
 tm_shape(df_agg)+
   tm_polygons("harga_m2")
 ```
+
 Just like how you can use facets in `ggplot2`, you can also create it with `tm_facets()`, for example, to split our map based on each city:
 
 ```{r}
@@ -721,8 +720,80 @@ tm_shape(df_agg)+
 
 # Publishing your Map
 
+An effective way to communicate data visualization is by creating a dashboard. Dashboard helps to communicate information intuitively and essential to support data-driven decision making. The **R Markdown** file can be used to turn our analysis into fully reproducible documents that can be shared with others to communicate our analysis quickly and effectively.
 
+In this section, we will recreate [this](https://rpubs.com/tangerine/dss-geospatial) simple Jakarta housing dashboard using R's `flexdashboard` package:
 
+```{r flex-pubs, echo = FALSE, fig.align = "center", fig.cap="Snapshot of the final dashboard"}
+knitr::include_graphics("img/flex-pubs.png")
+```
+
+**Flex Dashboard** is an R package that “easily create flexible, attractive, interactive dashboards with R”. Authoring and customization of dashboards is done using R Markdown with the `flexdashboard::flex_dashboard` output format. To get started, install `flexdashboard` using the standard installation process you should be familiar by now: `install.packages("flexdashboard")`.
+
+When that is done, create a new R Markdown document from within RStudio, choose “From Template” and then **Flex Dashboard** as following:
+
+```{r flex, echo = FALSE, fig.align = "center", fig.cap="Creating a new Flex Dashboard"}
+knitr::include_graphics("img/flex.png")
+```
+
+The template code that was generated for you takes some default value - for example it chooses to have a `columns` orientation and set your layout to `fill`, and just like a regular **R Markdown** file, we have three basic components:
+
+- YAML header specifying the output format,
+- body text in Markdown syntax,
+- R code chunks.
+
+Now, let's take a closer look on the body part of the generated template code. For the body part, we also need to specify the layout for the page.  We can create layouts with multiple columns by using `--------------` for each column, and to include dashboard components (plot, table, map, etc.) we can use `###`. 
+Here is the base layout for Jakarta housing dashboard:
+
+````
+`r paste(readLines('assets/dashboard-geo-temp.Rmd'), collapse = '\n')`
+````
+
+> **Dive Deeper**
+
+Refer to `dashboard-geo.html` in this directory for the map we're going to recreate. The first component that we're going to show is the choropleth we created using leaflet on our previous section. Can you copy down the code and paste it on the base layout above correctly?
+
+A **flexdashboard** can include a wide variety of components, including the following interactive JavaScript visualizations based on HTML widgets[^7]. Examples of HTML widgets includes the `leaflet` maps, `DT` tables, `dygraphs` maps, etc. Other HTML widgets can be seen [here](https://www.htmlwidgets.org/).
+
+For example, for the next component, we're going to create a table using `DT`, an R's interface to the JavaScript library [DataTables](http://datatables.net/)[^8]. To create a DT object, we can use `datatable()` and pass in the data that we want to view. Here, we "tidy up" the data source we used for the choropleth by dropping some columns, etc. and map the data inside the `datatable()` function:
+
+```{r}
+library(DT)
+
+data <- df_agg %>% 
+  as.data.frame() %>% 
+  arrange(desc(harga_m2)) %>% 
+  select(kota, kecamatan, harga_m2) %>% 
+  mutate(harga_m2 = number(harga_m2, big.mark = ",")) %>% 
+  rename(
+    Kota = kota,
+    Kecamatan = kecamatan,
+    `Harga/m2` = harga_m2
+  ) 
+
+datatable(
+  data
+)
+```
+
+We can also add more extensions on our table, for example to add download buttons and set the number of entries shown:
+
+```{r}
+DT::datatable(
+  data,
+  extensions = "Buttons",
+  options = list(
+    pageLength = 25,
+    dom = 'Bfrtip',
+    buttons = c('csv','excel','pdf')
+  )
+)
+```
+The complete `.Rmd` for the dashboard would look like this:
+
+````{.scroll-500}
+`r paste(readLines('dashboard-geo.Rmd'), collapse = '\n')`
+````
 
 
 # References
@@ -732,3 +803,5 @@ tm_shape(df_agg)+
 [^4]: [Robin Lovelace, Jakub Nowosad, Jannes Muenchow, "Geocomputation with R"](https://geocompr.robinlovelace.net/spatial-class.html)
 [^5]: [Leaflet for R](https://rstudio.github.io/leaflet/)
 [^6]: [Wilkinson, Leland, and Graham Wills. 2005. The Grammar of Graphics. Springer Science+ Business Media.](https://www.springer.com/de/book/9780387245447)
+[^7]: [Paula Moraga, Geospatial Health Data: Modeling and Visualization with R-INLA and Shiny, 2019](https://www.paulamoraga.com/book-geospatial/index.html)
+[^8]: [DT: An R interface to the DataTables library](https://rstudio.github.io/DT/)
