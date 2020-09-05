@@ -1,4 +1,4 @@
-# Geospatial Analysis in R
+# Introduction to Geospatial Analysis in R
 
 ## Overview
 
