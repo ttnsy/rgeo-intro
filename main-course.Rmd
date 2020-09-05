@@ -145,19 +145,17 @@ There are lots of data formats that can be used to store each data model. *KML*,
 
 **Shapefile** is the universal standard of geospatial format developed and regulated by [Esri](https://www.esri.com/en-us/home), the international supplier of geographic information system softwares. The type format is then adopted by so many programming languages, including R.
 
-The name Shapefile might be a little deceptive since the file is made up of at least three separate files: 
+The name Shapefile might be a little deceptive since the file is commonly made up from these separate files: 
 
-- `.shp` includes the geometry data    
-- `.shx` includes the index data used to identify different geometries    
-- `.dbf` includes attribute information of each geometry's data.
+- `.shp` (**mandatory**): includes the geometry data.
+- `.shx` (**mandatory**): includes the index data used to identify different geometries.    
+- `.dbf` (**mandatory**): includes attribute information of each geometry's data.
+- `.prj` includes the information of the coordinate reference system 
 
-For this workshop, I have provided a shapefile for Indonesian territory under `data/gadm36_IDN_3` folder of this directory. Notice that inside the directory, there are reading there are additional files other than 3 mandatory files listed above:  
+Other than the listed files above, a shapefile may includes other file components. A comprehensive list of shapefile components can be accessed [here](https://www.loc.gov/preservation/digital/formats/fdd/fdd000280.shtml).
 
-- `.prj` includes the information of the coordinate reference system    
-- `.cpg` includes encoding information for the variable attribute stored in `.dbf` files
+For this workshop, I have provided a shapefile for Indonesian territory under `shp` folder of this directory. Notice that inside the directory, there is also a `gadm36_IDN_3.zip` which actually the original Indonesian shapefile provided by [GADM](https://gadm.org/about.html). If you go ahead to the website you can pick out different countries spatial vector. Indonesia's spatial vector is provided up to 4 levels of granularity. In this course we'll be working with 3 levels of spatial vector that contains: **Provinsi**, **Kabupaten** and **Kecamatan**.
 
-
-The shapefile itself is made available by [GADM](https://gadm.org/about.html). If you go ahead to the website you can pick out different countries spatial vector. Indonesia's spatial vector is provided up to 4 levels of granularity. In this course we'll be working with 3 levels of spatial vector that contains: **Provinsi**, **Kabupaten** and **Kecamatan**.
 
 ***
 **Extra Tip**:  
@@ -179,7 +177,7 @@ You can also access GADM database directly from R with the help of [`GADMTools`]
 Let's read in the files using `st_read()` function from `sf` package:
 
 ```{r}
-idn3 <- st_read(dsn = "gadm36_IDN_3", layer = "gadm36_IDN_3")
+idn <- st_read(dsn = "shp", layer = "idn")
 ```
 
 `sf` represents "Simple Features" as records in a data.frame or tibble with a geometry list-column[^3]. **Simple Features** is a hierarchical data model that represents a wide range of geometry types. Of 17 geometry types supported by the specification, only 7 are used in the vast majority of geographic research [^4]:
@@ -188,22 +186,22 @@ idn3 <- st_read(dsn = "gadm36_IDN_3", layer = "gadm36_IDN_3")
 knitr::include_graphics("img/geom.png")
 ```
 
-If you use the `class()` function for our newly created `idn3` object you can retrieved how the `sf` class handles spatial data in similar way as any tabular data structure; by stores it as a dataframe:
+If you use the `class()` function for our newly created `idn` object you can retrieved how the `sf` class handles spatial data in similar way as any tabular data structure; by stores it as a dataframe:
 
 ```{r}
-class(idn3)
+class(idn)
 ```
 
 The main difference between a regular dataframe an an `sf` object is that it has `geometry` which describes where on Earth the feature is located, and they have attributes, which describe other properties:
 
 ```{r}
-idn3$geometry
+idn$geometry
 ```
 
-To get a better idea about `geometry` information in an `sf` object, let's go ahead and plot `idn3$geometry` using `plot()` function:
+To get a better idea about `geometry` information in an `sf` object, let's go ahead and plot `idn$geometry` using `plot()` function:
 
 ```{r}
-plot(idn3$geometry)
+plot(idn$geometry)
 ```
 
 There are several informations that is stored in an `sf`'s `geometry`:
@@ -226,7 +224,7 @@ If we were using geospatial data from different sources, it is important to make
 The big advantage of using `sf` is how you each functions can be combined using `%>%` operator and works well with the tidyverse collection of R packages, which gives us better control over the geometry information in `sf` objects. For example, to subset certain provinces, you can use `filter()` method just like how you work with regular dataframe:
 
 ```{r}
-bali <- idn3 %>% 
+bali <- idn %>% 
   filter(NAME_1 == "Bali")
 
 plot(bali$geometry)
@@ -260,17 +258,17 @@ The disadvantage of `sf` is, since it is relatively new, some spatial packages m
 
 ```{r}
 library(sp)
-idn3_sp <- as(idn3, Class = "Spatial")
+idn_sp <- as(idn, Class = "Spatial")
 
-class(idn3_sp)
+class(idn_sp)
 ```
 
 Spatial objects can be converted back to `sf` in the same way or with `sf`'s `st_as_sf()` function:
 
 ```{r}
-idn3_sf <- st_as_sf(idn3_sp)
+idn_sf <- st_as_sf(idn_sp)
 
-class(idn3_sf)
+class(idn_sf)
 ```
 
 ***
@@ -305,10 +303,10 @@ df_agg <- df %>%
 head(df_agg)
 ```
 
-To project our `housing` data into a map, we need to equip each observation in the data with geographical information representation. We can do this by joining the information of the city (`kota`) & sub-district (`kecamatan`) to `NAME_2` & `NAME_3` variables respectively in `idn3`: 
+To project our `housing` data into a map, we need to equip each observation in the data with geographical information representation. We can do this by joining the information of the city (`kota`) & sub-district (`kecamatan`) to `NAME_2` & `NAME_3` variables respectively in `idn`: 
 
 ```{r}
-idn3 %>% 
+idn %>% 
   as.data.frame() %>% 
   head()
 ```
@@ -316,7 +314,7 @@ To join two dataframes in R, we can use the `*_join()` function from `dplyr` pac
 
 ```{r}
 df_agg <- df_agg %>% 
-  left_join(idn3, by = c("kota" = "NAME_2", "kecamatan" = "NAME_3"))
+  left_join(idn, by = c("kota" = "NAME_2", "kecamatan" = "NAME_3"))
 
 head(df_agg)
 ```
@@ -346,6 +344,7 @@ You can also easily map the color of `harga_m2` by adding the variable inside th
 ggplot(df_agg)+
   geom_sf(aes(fill = harga_m2)) 
 ```
+
 > **Dive Deeper**
 
 Recall how you can use `labs()` in ggplot to add label informations, such as title, subtitle, etc. Copy down the previous code above, and provide the map with appropriate labellings on the chunk below!

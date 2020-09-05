@@ -44,8 +44,6 @@ perum <- perum %>%
 # write as csv
 write_csv(perum, "data/perumahan.csv")
 
-
-
 # for housing data --------------------------------------------------------
 
 house <- read_csv("data/scraping/housing.csv") %>% 
