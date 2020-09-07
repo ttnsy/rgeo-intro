@@ -1,8 +1,8 @@
-# Introduction to Geospatial Analysis in R
+# Building Interactive Map for Geospatial Analysis in R
 
 ## Overview
 
-The following coursebook is produced for [Algoritma](https://algorit.ma/)'s DSS [*Geospatial Analysis in R*](https://algorit.ma/ds-course/building-interactive-mapping-for-geospatial-analysis-in-r/) workshop. The 4-days online workshop is intended for participants new to the world of spatial analysis and / or programming. No prior programming knowledge is assumed.
+The following coursebook is produced for [Algoritma](https://algorit.ma/)'s DSS [*Building Interactive Map for Geospatial Analysis in R*](https://algorit.ma/ds-course/building-interactive-mapping-for-geospatial-analysis-in-r/) workshop. The 4-days online workshop is intended for participants new to the world of spatial analysis and / or programming. No prior programming knowledge is assumed.
 
  The primary objective of this course is to provide a participant a comprehensive introduction about tools and software for visualizing a geospatial data using the popular open-source tools: R
 
