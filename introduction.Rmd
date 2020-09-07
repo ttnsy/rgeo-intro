@@ -251,7 +251,7 @@ _**Notes: Creating a Variable**_:
 
 ## Class Variables
 
-The most basic form of R object is a vector. In math, a vector is used to denotes magnitude and direction which is also implemented in R. The previous `an_obj` stored a value of: "This is a value" and it stores the value as a **character class**. There are 5 basic class variables in R:
+The most basic form of R object is a vector. In math, a vector is used to denotes magnitude and direction which is also implemented in R. The previous `address` stored a value of: "Algoritma Data Science School, Jl. Prof. DR. Satrio No.164, RT.4/RW.4" and it stores the value as a **character class**. There are 5 basic class variables in R:
 
 ```{r}
 # character
